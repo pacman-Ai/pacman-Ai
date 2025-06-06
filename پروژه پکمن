@@ -1,0 +1,181 @@
+پروژه نهایی
+# -------------------------------
+# Importing required utilities
+# -------------------------------
+from util import Queue, Stack, PriorityQueue  # Importing data structures
+from game import Directions  # Importing direction utilities
+import math
+
+# -------------------------------
+# Search Algorithms Implementations
+# -------------------------------
+
+# Breadth-First Search (BFS)
+def breadthFirstSearch(problem):
+    """
+    This function implements the Breadth-First Search (BFS) algorithm
+    to find the shortest path from the start state to the goal state.
+    """
+    queue = Queue()
+    queue.push((problem.getStartState(), []))  # Start state and the path taken
+    visited = set()
+
+    while not queue.isEmpty():
+        state, path = queue.pop()
+
+        if problem.isGoalState(state):  # Goal found
+            return path
+
+        if state not in visited:
+            visited.add(state)
+            for nextState, action, _ in problem.getSuccessors(state):
+                newPath = path + [action]
+                queue.push((nextState, newPath))
+    return []  # Return empty path if no solution is found
+
+
+# Depth-First Search (DFS)
+def depthFirstSearch(problem):
+    """
+    This function implements the Depth-First Search (DFS) algorithm
+    to find a path from the start state to the goal state.
+    """
+    stack = Stack()
+    stack.push((problem.getStartState(), []))  # Start state and the path taken
+    visited = set()
+
+    while not stack.isEmpty():
+        state, path = stack.pop()
+
+        if problem.isGoalState(state):  # Goal found
+            return path
+
+        if state not in visited:
+            visited.add(state)
+            for nextState, action, _ in problem.getSuccessors(state):
+                newPath = path + [action]
+                stack.push((nextState, newPath))
+    return []  # Return empty path if no solution is found
+
+
+# A* Search Algorithm
+def aStarSearch(problem, heuristic):
+    """
+    A* Search algorithm using both the cost to reach the current state (g(n))
+    and the heuristic (h(n)) to estimate the remaining cost.
+    """
+    pq = PriorityQueue()
+    start_state = problem.getStartState()
+    pq.push((start_state, [], 0), heuristic(start_state, problem))  # Start state with heuristic value
+    visited = set()
+
+    while not pq.isEmpty():
+        state, path, cost = pq.pop()
+
+        if problem.isGoalState(state):  # Goal found
+            return path
+
+        if state not in visited:
+            visited.add(state)
+            for nextState, action, step_cost in problem.getSuccessors(state):
+                new_cost = cost + step_cost
+                new_heuristic = heuristic(nextState, problem)
+                pq.push((nextState, path + [action], new_cost), new_cost + new_heuristic)
+    
+    return []  # Return empty path if no solution is found
+
+
+# Greedy Search Algorithm
+def greedySearch(problem, heuristic):
+    """
+    Greedy Search algorithm that only uses the heuristic (h(n)) 
+    to determine the next state to explore.
+    """
+    pq = PriorityQueue()
+    start_state = problem.getStartState()
+    pq.push((start_state, [], 0), heuristic(start_state, problem))  # Start state with heuristic value
+    visited = set()
+
+    while not pq.isEmpty():
+        state, path, cost = pq.pop()
+
+        if problem.isGoalState(state):  # Goal found
+            return path
+
+        if state not in visited:
+            visited.add(state)
+            for nextState, action, _ in problem.getSuccessors(state):
+                pq.push((nextState, path + [action], cost), heuristic(nextState, problem))
+    
+    return []  # Return empty path if no solution is found
+
+
+# -------------------------------
+# Search Agent Implementation
+# -------------------------------
+
+class SearchAgent:
+    """
+    یک عامل جستجو که از الگوریتم‌های جستجو برای حرکت استفاده می‌کند.
+    """
+
+    def __init__(self, fn='depthFirstSearch', prob=None, heuristic=None):
+        """
+        انتخاب الگوریتم جستجو بر اساس ورودی.
+        """
+        if fn == 'depthFirstSearch':
+            self.searchFunction = depthFirstSearch
+        elif fn == 'breadthFirstSearch':
+            self.searchFunction = breadthFirstSearch
+        elif fn == 'aStarSearch':
+            self.searchFunction = aStarSearch
+        elif fn == 'greedySearch':
+            self.searchFunction = greedySearch
+        else:
+            raise ValueError(f"Unknown search function {fn}")
+        
+        self.heuristic = heuristic
+        self.problem = prob
+        self.actions = []
+
+    def registerInitialState(self, state):
+        """
+        مقداردهی اولیه و اجرای الگوریتم جستجو.
+        """
+        if self.heuristic:
+            self.actions = self.searchFunction(self.problem, self.heuristic)
+        else:
+            self.actions = self.searchFunction(self.problem)
+
+    def getAction(self, state):
+        """
+        دریافت اقدام بعدی از مسیر جستجو.
+        """
+        if len(self.actions) == 0:
+            return Directions.STOP  # No more actions, stop
+        return self.actions.pop(0)
+
+
+# -------------------------------
+# Example Heuristic Function
+# -------------------------------
+
+def exampleHeuristic(state, problem):
+    """
+    Example heuristic function for A* and Greedy search algorithms.
+    This can be replaced with any custom heuristic function.
+    Example: Manhattan Distance (suitable for grid environments)
+    """
+    # Example heuristic: Manhattan Distance
+    x1, y1 = state  # Current position (x, y)
+    x2, y2 = problem.getGoalState()  # Goal position (x, y)
+    return abs(x1 - x2) + abs(y1 - y2)  # Manhattan Distance
+
+
+# -------------------------------
+# Running the Agent in a Pacman Game Environment
+# -------------------------------
+
+# To run the search agent in the Pacman environment, we would use the following:
+# (Assuming `pacman.py` handles the game setup and execution)
+# python pacman.py -l tinyMaze -p SearchAgent -a fn=breadthFirstSearch
